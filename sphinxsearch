@@ -15,6 +15,10 @@
 ## Author: Vladimir Fedorkov Mar 1, 2006, info@astellar.com
 ## License: Public Domain
 ##
+## Run this at your own risk. I make no guarantees about the stability
+## or security of the included script(s).
+##
+##
 
 SUDO_USER="sphinxsearch"
 PROG_NAME="searchd"
