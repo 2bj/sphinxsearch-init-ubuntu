@@ -1,0 +1,95 @@
+#!/bin/bash
+
+### BEGIN INIT INFO
+# Provides: sphinxsearch
+# Required-Start: $local_fs $remote_fs $network $syslog $named
+# Required-Stop: $local_fs $remote_fs $network $syslog $named
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: starts the sphinx searchd service
+# Description: starts sphinx searchd using start-stop-daemon
+### END INIT INFO
+
+##
+## Author: Brendon Crawford
+## Author: Vladimir Fedorkov Mar 1, 2006, info@astellar.com
+## License: Public Domain
+##
+
+SUDO_USER="sphinxsearch"
+PROG_NAME="searchd"
+CONFIG_PATH="/etc/sphinxsearch/sphinx.conf"
+PID_FILE="searchd.pid"
+PID_DIR="/var/run/sphinxsearch"
+PID_PATH="${PID_DIR}/${PID_FILE}"
+PROG_PATH="/usr/local/bin/${PROG_NAME}"
+LOG_DIR="/var/log/sphinxsearch"
+LIB_DIR="/var/lib/sphinxsearch"
+
+RETVAL=0
+
+do_config() {
+    mkdir -p ${LIB_DIR}
+    mkdir -p ${LIB_DIR}/data
+    mkdir -p ${LOG_DIR}
+    mkdir -p ${PID_DIR}
+
+    chown -R ${SUDO_USER} ${CONFIG_PATH}
+    chown -R ${SUDO_USER} ${LIB_DIR}
+    chown -R ${SUDO_USER} ${LOG_DIR}
+    chown -R ${SUDO_USER} ${PID_DIR}
+
+    chmod 644 ${CONFIG_PATH}
+    chmod 755 ${PROG_PATH}
+    chmod -R u+rw,go-rwx ${LIB_DIR}
+    chmod -R u+rw,go-rwx ${LOG_DIR}
+    chmod -R 700 ${PID_DIR}
+
+    echo "OK."
+}
+
+do_start() {
+    echo "Starting ${PROG_NAME}"
+    su -l -s /bin/bash -c "${PROG_PATH} --config ${CONFIG_PATH}" ${SUDO_USER} > /dev/null
+    RETVAL=${?}
+    return ${RETVAL}
+}
+
+do_stop() {
+    echo "Stopping ${PROG_NAME}"
+    if [ -e ${PID_PATH} ] ; then
+        kill -15 $(cat ${PID_PATH})
+        sleep 5
+        if [ -e ${PID_PATH} ] ; then
+            kill -9 $(cat ${PID_PATH})
+        fi
+    fi
+    RETVAL=${?}
+    return ${RETVAL}
+}
+
+case $* in
+config)
+    do_config
+    ;;
+
+start)
+    do_start
+    ;;
+
+stop)
+    do_stop
+    ;;
+
+restart)
+    do_stop
+    do_start
+    ;;
+
+*)
+    echo "usage: ${0} {start|stop|restart|config}" >&2
+    exit 1
+    ;;
+esac
+
+exit ${RETVAL}
